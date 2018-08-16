@@ -279,7 +279,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
         return name in self.locals
 
 
-class Module(LocalsDictNodeNG):
+class Module(LocalsDictNodeNG, mixins.MultiLineBlockMixin):
     """Class representing an :class:`ast.Module` node.
 
     >>> node = astroid.extract_node('import astroid')
@@ -289,6 +289,7 @@ class Module(LocalsDictNodeNG):
     <Module l.0 at 0x7f23b2e4eda0>
     """
     _astroid_fields = ('body',)
+    _multi_line_block_fields = ('body',)
 
     fromlineno = 0
     """The first line that this node appears on in the source code.
