@@ -3785,19 +3785,19 @@ class GetattrTest(unittest.TestCase):
 
         second = next(ast_nodes[1].infer())
         self.assertIsInstance(second, UnboundMethod)
-        self.assertIsInstance(second.parent, nodes.ClassDef)
-        self.assertEqual(second.parent.name, 'A')
+        self.assertIsInstance(second.parent.parent, nodes.ClassDef)
+        self.assertEqual(second.parent.parent.name, 'A')
 
         third = next(ast_nodes[2].infer())
         self.assertIsInstance(third, BoundMethod)
         # Bound to E, but the provider is B.
         self.assertEqual(third.bound.name, 'E')
-        self.assertEqual(third._proxied._proxied.parent.name, 'B')
+        self.assertEqual(third._proxied._proxied.parent.parent.name, 'B')
 
         fourth = next(ast_nodes[3].infer())
         self.assertIsInstance(fourth, BoundMethod)
         self.assertEqual(fourth.bound.name, 'E')
-        self.assertEqual(third._proxied._proxied.parent.name, 'B')
+        self.assertEqual(third._proxied._proxied.parent.parent.name, 'B')
 
         fifth = next(ast_nodes[4].infer())
         self.assertIsInstance(fifth, BoundMethod)
@@ -4704,7 +4704,7 @@ def test_attribute_inference_should_not_access_base_classes():
     """
     res = extract_node(code).inferred()
     assert len(res) == 1
-    assert res[0].parent.name == "type"
+    assert res[0].parent.parent.name == "type"
 
 
 def test_attribute_mro_object_inference():

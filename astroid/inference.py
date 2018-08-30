@@ -50,6 +50,7 @@ def infer_end(self, context=None):
     """
     yield self
 nodes.Module._infer = infer_end
+nodes.Block._infer = infer_end
 nodes.ClassDef._infer = infer_end
 nodes.FunctionDef._infer = infer_end
 nodes.Lambda._infer = infer_end

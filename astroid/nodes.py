@@ -21,7 +21,7 @@ All nodes inherit from :class:`~astroid.node_classes.NodeNG`.
 # pylint: disable=unused-import,redefined-builtin
 
 from astroid.node_classes import (
-    NodeNG, Arguments, AssignAttr, Assert, Assign, AnnAssign,
+    NodeNG, Block, Arguments, AssignAttr, Assert, Assign, AnnAssign,
     AssignName, AugAssign, Repr, BinOp, BoolOp, Break, Call, Compare,
     Comprehension, Const, Continue, Decorators, DelAttr, DelName, Delete,
     Dict, Expr, Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice, For,
@@ -47,7 +47,7 @@ ALL_NODE_CLASSES = (
     AsyncFunctionDef, AsyncFor, AsyncWith, Await,
 
     Arguments, AssignAttr, Assert, Assign, AnnAssign, AssignName, AugAssign,
-    Repr, BinOp, BoolOp, Break,
+    Repr, Block, BinOp, BoolOp, Break,
     Call, ClassDef, Compare, Comprehension, Const, Continue,
     Decorators, DelAttr, DelName, Delete,
     Dict, DictComp, DictUnpack, Expr,

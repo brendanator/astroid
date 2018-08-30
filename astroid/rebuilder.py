@@ -159,7 +159,11 @@ class TreeRebuilder:
         newnode = nodes.Module(name=modname, doc=doc, file=modpath,
                                path=[modpath],
                                package=package, parent=None)
-        newnode.postinit([self.visit(child, newnode) for child in node.body])
+        body = nodes.Block(
+            'body',
+            [self.visit(child, newnode) for child in node.body],
+            newnode)
+        newnode.postinit(body)
         return newnode
 
     def visit(self, node, parent):
@@ -389,10 +393,12 @@ class TreeRebuilder:
             decorators = self.visit_decorators(node, newnode)
         else:
             decorators = None
-        newnode.postinit([self.visit(child, newnode)
-                          for child in node.bases],
-                         [self.visit(child, newnode)
-                          for child in node.body],
+        body = nodes.Block(
+            'body',
+            [self.visit(child, newnode) for child in node.body],
+            newnode)
+        newnode.postinit([self.visit(child, newnode) for child in node.bases],
+                         body,
                          decorators, newstyle, metaclass,
                          [self.visit(kwd, newnode) for kwd in node.keywords
                           if kwd.arg != 'metaclass'] if PY3 else [])
@@ -495,10 +501,13 @@ class TreeRebuilder:
         """visit an ExceptHandler node by returning a fresh instance of it"""
         newnode = nodes.ExceptHandler(node.lineno, node.col_offset, parent)
         # /!\ node.name can be a tuple
+        body = nodes.Block(
+            'body',
+            [self.visit(child, newnode) for child in node.body],
+            newnode)
         newnode.postinit(_visit_or_none(node, 'type', self, newnode),
                          _visit_or_none(node, 'name', self, newnode),
-                         [self.visit(child, newnode)
-                          for child in node.body])
+                         body)
         return newnode
 
     def visit_exec(self, node, parent):
@@ -520,11 +529,19 @@ class TreeRebuilder:
         """visit a For node by returning a fresh instance of it"""
         newnode = cls(node.lineno, node.col_offset, parent)
         type_annotation = self.check_type_comment(node)
+        body = nodes.Block(
+            'body',
+            [self.visit(child, newnode) for child in node.body],
+            newnode)
+        orelse = nodes.Block(
+            'orelse',
+            [self.visit(child, newnode) for child in node.orelse],
+            newnode)
         newnode.postinit(
             target=self.visit(node.target, newnode),
             iter=self.visit(node.iter, newnode),
-            body=[self.visit(child, newnode) for child in node.body],
-            orelse=[self.visit(child, newnode) for child in node.orelse],
+            body=body,
+            orelse=orelse,
             type_annotation=type_annotation,
         )
         return newnode
@@ -561,9 +578,13 @@ class TreeRebuilder:
         type_comment_annotation = self.check_function_type_comment(node)
         if type_comment_annotation:
             type_comment_returns, type_comment_args = type_comment_annotation
+        body = nodes.Block(
+            'body',
+            [self.visit(child, newnode) for child in node.body],
+            newnode)
         newnode.postinit(
             args=self.visit(node.args, newnode),
-            body=[self.visit(child, newnode) for child in node.body],
+            body=body,
             decorators=decorators,
             returns=returns,
             type_comment_returns=type_comment_returns,
@@ -615,11 +636,18 @@ class TreeRebuilder:
     def visit_if(self, node, parent):
         """visit an If node by returning a fresh instance of it"""
         newnode = nodes.If(node.lineno, node.col_offset, parent)
-        newnode.postinit(self.visit(node.test, newnode),
-                         [self.visit(child, newnode)
-                          for child in node.body],
-                         [self.visit(child, newnode)
-                          for child in node.orelse])
+        body = nodes.Block(
+            'body',
+            [self.visit(child, newnode) for child in node.body],
+            newnode)
+        orelse = nodes.Block(
+            'orelse',
+            [self.visit(child, newnode) for child in node.orelse],
+            newnode)
+        newnode.postinit(
+            self.visit(node.test, newnode),
+            body,
+            orelse)
         return newnode
 
     def visit_ifexp(self, node, parent):
@@ -778,21 +806,30 @@ class TreeRebuilder:
     def visit_tryexcept(self, node, parent):
         """visit a TryExcept node by returning a fresh instance of it"""
         newnode = nodes.TryExcept(node.lineno, node.col_offset, parent)
-        newnode.postinit([self.visit(child, newnode)
-                          for child in node.body],
-                         [self.visit(child, newnode)
-                          for child in node.handlers],
-                         [self.visit(child, newnode)
-                          for child in node.orelse])
+        body = nodes.Block(
+            'body',
+            [self.visit(child, newnode) for child in node.body],
+            newnode)
+        handlers = [self.visit(child, newnode) for child in node.handlers]
+        orelse = nodes.Block(
+            'orelse',
+            [self.visit(child, newnode) for child in node.orelse],
+            newnode)
+        newnode.postinit(body, handlers, orelse)
         return newnode
 
     def visit_tryfinally(self, node, parent):
         """visit a TryFinally node by returning a fresh instance of it"""
         newnode = nodes.TryFinally(node.lineno, node.col_offset, parent)
-        newnode.postinit([self.visit(child, newnode)
-                          for child in node.body],
-                         [self.visit(n, newnode)
-                          for n in node.finalbody])
+        body = nodes.Block(
+            'body',
+            [self.visit(n, newnode) for n in node.body],
+            newnode)
+        finalbody = nodes.Block(
+            'finalbody',
+            [self.visit(n, newnode) for n in node.finalbody],
+            newnode)
+        newnode.postinit(body, finalbody)
         return newnode
 
     def visit_tuple(self, node, parent):
@@ -816,11 +853,15 @@ class TreeRebuilder:
     def visit_while(self, node, parent):
         """visit a While node by returning a fresh instance of it"""
         newnode = nodes.While(node.lineno, node.col_offset, parent)
-        newnode.postinit(self.visit(node.test, newnode),
-                         [self.visit(child, newnode)
-                          for child in node.body],
-                         [self.visit(child, newnode)
-                          for child in node.orelse])
+        body = nodes.Block(
+            'body',
+            [self.visit(child, newnode) for child in node.body],
+            newnode)
+        orelse = nodes.Block(
+            'orelse',
+            [self.visit(child, newnode) for child in node.orelse],
+            newnode)
+        newnode.postinit(self.visit(node.test, newnode), body, orelse)
         return newnode
 
     def visit_with(self, node, parent):
@@ -831,10 +872,14 @@ class TreeRebuilder:
         else:
             optional_vars = None
 
+        body = nodes.Block(
+            'body',
+            [self.visit(child, newnode) for child in node.body],
+            newnode)
         type_annotation = self.check_type_comment(node)
         newnode.postinit(
             items=[(expr, optional_vars)],
-            body=[self.visit(child, newnode) for child in node.body],
+            body=body,
             type_annotation=type_annotation,
         )
         return newnode
@@ -866,10 +911,14 @@ class TreeRebuilder3(TreeRebuilder):
             name = self.visit_assignname(node, newnode, node.name)
         else:
             name = None
-        newnode.postinit(_visit_or_none(node, 'type', self, newnode),
-                         name,
-                         [self.visit(child, newnode)
-                          for child in node.body])
+        body = nodes.Block(
+            'body',
+            [self.visit(child, newnode) for child in node.body],
+            newnode)
+        newnode.postinit(
+            _visit_or_none(node, 'type', self, newnode),
+            name,
+            body)
         return newnode
 
     def visit_nonlocal(self, node, parent):
@@ -900,13 +949,20 @@ class TreeRebuilder3(TreeRebuilder):
         if node.finalbody:
             newnode = nodes.TryFinally(node.lineno, node.col_offset, parent)
             if node.handlers:
-                body = [self.visit_tryexcept(node, newnode)]
+                body = nodes.Block(
+                    'body',
+                    [self.visit_tryexcept(node, newnode)],
+                    newnode)
             else:
-                body = [self.visit(child, newnode)
-                        for child in node.body]
-            newnode.postinit(body,
-                             [self.visit(n, newnode)
-                              for n in node.finalbody])
+                body = nodes.Block(
+                    'body',
+                    [self.visit(child, newnode) for child in node.body],
+                    newnode)
+            finalbody = nodes.Block(
+                'finalbody',
+                [self.visit(n, newnode) for n in node.finalbody],
+                newnode)
+            newnode.postinit(body, finalbody)
             return newnode
         elif node.handlers:
             return self.visit_tryexcept(node, parent)
@@ -934,9 +990,13 @@ class TreeRebuilder3(TreeRebuilder):
             return expr, var
 
         type_annotation = self.check_type_comment(node)
+        body = nodes.Block(
+            'body',
+            [self.visit(child, newnode) for child in node.body],
+            newnode)
         newnode.postinit(
             items=[visit_child(child) for child in node.items],
-            body=[self.visit(child, newnode) for child in node.body],
+            body=body,
             type_annotation=type_annotation,
         )
         return newnode

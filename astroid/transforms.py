@@ -79,5 +79,5 @@ class TransformVisitor:
         Only the nodes which have transforms registered will actually
         be replaced or changed.
         """
-        module.body = [self._visit(child) for child in module.body]
+        module.body.statements = [self._visit(child) for child in module.body.statements]
         return self._transform(module)

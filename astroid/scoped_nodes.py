@@ -206,8 +206,8 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
         # which uses the current class as a mixin or base class.
         # It's rewritten in 2.0, so it makes no sense for now
         # to spend development time on it.
-        self.body.append(child)
-        child.parent = self
+        self.body.statements.append(child)
+        child.parent = self.body
 
     def add_local_node(self, child_node, name=None):
         """Append a child that should alter the locals of this scope node.
@@ -407,10 +407,10 @@ class Module(LocalsDictNodeNG, mixins.MultiLineBlockMixin):
 
         :type: dict(str, NodeNG)
         """
-        self.body = []
+        self.body = node_classes.Block('body', [], self)
         """The contents of the module.
 
-        :type: list(NodeNG) or None
+        :type: Block or None
         """
         self.future_imports = set()
     # pylint: enable=redefined-builtin
@@ -419,7 +419,7 @@ class Module(LocalsDictNodeNG, mixins.MultiLineBlockMixin):
         """Do some setup after initialisation.
 
         :param body: The contents of the module.
-        :type body: list(NodeNG) or None
+        :type body: Block or None
         """
         self.body = body
 
@@ -716,7 +716,7 @@ class Module(LocalsDictNodeNG, mixins.MultiLineBlockMixin):
         return True
 
     def get_children(self):
-        yield from self.body
+        yield self.body
 
 
 class ComprehensionScope(LocalsDictNodeNG):
@@ -1095,10 +1095,10 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :type: Arguments or list
         """
 
-        self.body = []
+        self.body = node_classes.Block('body', [], self)
         """The contents of the function body.
 
-        :type: list(NodeNG)
+        :type: Block
         """
 
         super(Lambda, self).__init__(lineno, col_offset, parent)
@@ -1110,7 +1110,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :type args: Arguments
 
         :param body: The contents of the function body.
-        :type body: list(NodeNG)
+        :type body: Block
         """
         self.args = args
         self.body = body
@@ -1323,7 +1323,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :type args: Arguments or list
 
         :param body: The contents of the function body.
-        :type body: list(NodeNG)
+        :type body: Block
 
         :param decorators: The decorators that are applied to this
             method or function.
@@ -1609,7 +1609,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 new_class.parent = self
                 new_class.postinit(
                     bases=[base for base in class_bases if base != util.Uninferable],
-                    body=[],
+                    body=node_classes.Block('body', [], new_class),
                     decorators=[],
                     metaclass=metaclass,
                 )
@@ -1648,7 +1648,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         if self.returns is not None:
             yield self.returns
 
-        yield from self.body
+        yield self.body
 
 
 class AsyncFunctionDef(FunctionDef):
@@ -1849,10 +1849,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         :type: list(NodeNG)
         """
 
-        self.body = []
+        self.body = node_classes.Block('body', [], self)
         """The contents of the class body.
 
-        :type: list(NodeNG)
+        :type: Block
         """
 
         self.name = name
@@ -1897,7 +1897,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         :type bases: list(NodeNG)
 
         :param body: The contents of the class body.
-        :type body: list(NodeNG)
+        :type body: Block
 
         :param decorators: The decorators that are applied to this class.
         :type decorators: Decorators or None
@@ -2746,7 +2746,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             yield self.decorators
 
         yield from self.bases
-        yield from self.body
+        yield self.body
 
     def _get_assign_nodes(self):
         for child_node in self.body:

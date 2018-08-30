@@ -318,7 +318,7 @@ def _find_statement_by_line(node, line):
     else:
         node_line = node.lineno
 
-    if node_line == line:
+    if not isinstance(node, nodes.Block) and node_line == line:
         return node
 
     for child in node.get_children():

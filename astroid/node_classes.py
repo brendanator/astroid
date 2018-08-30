@@ -1194,6 +1194,48 @@ class LookupMixIn:
         return _stmts
 
 
+class Block(NodeNG):
+  _astroid_fields = ('statements', )
+  _other_fields = ('name', )
+
+  def __init__(self, name, statements, parent):
+    if statements:
+      lineno = statements[0].lineno
+      col_offset = statements[0].col_offset
+    else:
+      lineno = None
+      col_offset = None
+
+    super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    self.name = name
+    self.statements = statements
+
+    for statement in statements:
+      statement.parent = self
+
+  def get_children(self):
+    for child in self.statements:
+      yield child
+
+  def __bool__(self):
+    return bool(self.statements)
+
+  def __len__(self):
+    return len(self.statements)
+
+  def __getitem__(self, key):
+    return self.statements[key]
+
+  def __setitem__(self, key, value):
+    self.statements[key] = value
+
+  def __iter__(self):
+    return iter(self.statements)
+
+  def __add__(self, other: 'Block'):
+    return self.statements + other.statements
+
 # Name classes
 
 class AssignName(mixins.NoChildrenMixin, LookupMixIn,
@@ -2807,7 +2849,7 @@ class ExceptHandler(mixins.MultiLineBlockMixin,
     body = None
     """The contents of the block.
 
-    :type: list(NodeNG) or None
+    :type: Block or None
     """
 
     def get_children(self):
@@ -2817,7 +2859,7 @@ class ExceptHandler(mixins.MultiLineBlockMixin,
         if self.name is not None:
             yield self.name
 
-        yield from self.body
+        yield self.body
 
     # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
     def postinit(self, type=None, name=None, body=None):
@@ -2830,7 +2872,7 @@ class ExceptHandler(mixins.MultiLineBlockMixin,
         :type name: AssignName or None
 
         :param body:The contents of the block.
-        :type body: list(NodeNG) or None
+        :type body: Block or None
         """
         self.type = type
         self.name = name
@@ -2957,12 +2999,12 @@ class For(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn,
     body = None
     """The contents of the body of the loop.
 
-    :type: list(NodeNG) or None
+    :type: Block or None
     """
     orelse = None
     """The contents of the ``else`` block of the loop.
 
-    :type: list(NodeNG) or None
+    :type: Block or None
     """
     type_annotation = None
     """If present, this will contain the type annotation passed by a type comment
@@ -2981,10 +3023,10 @@ class For(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn,
         :type iter: NodeNG or None
 
         :param body: The contents of the body of the loop.
-        :type body: list(NodeNG) or None
+        :type body: Block or None
 
         :param orelse: The contents of the ``else`` block of the loop.
-        :type orelse: list(NodeNG) or None
+        :type orelse: Block or None
         """
         self.target = target
         self.iter = iter
@@ -3012,8 +3054,8 @@ class For(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn,
         yield self.target
         yield self.iter
 
-        yield from self.body
-        yield from self.orelse
+        yield self.body
+        yield self.orelse
 
 
 class AsyncFor(For):
@@ -3228,12 +3270,12 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     body = None
     """The contents of the block.
 
-    :type: list(NodeNG) or None
+    :type: Block or None
     """
     orelse = None
     """The contents of the ``else`` block.
 
-    :type: list(NodeNG) or None
+    :type: Block or None
     """
 
     def postinit(self, test=None, body=None, orelse=None):
@@ -3243,10 +3285,10 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         :type test: NodeNG or None
 
         :param body: The contents of the block.
-        :type body: list(NodeNG) or None
+        :type body: Block or None
 
         :param orelse: The contents of the ``else`` block.
-        :type orelse: list(NodeNG) or None
+        :type orelse: Block or None
         """
         self.test = test
         self.body = body
@@ -3280,8 +3322,8 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     def get_children(self):
         yield self.test
 
-        yield from self.body
-        yield from self.orelse
+        yield self.body
+        yield self.orelse
 
     def has_elif_block(self):
         return len(self.orelse) == 1 and isinstance(self.orelse[0], If)
@@ -3934,11 +3976,11 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     <TryExcept l.2 at 0x7f23b2e9d908>
     """
     _astroid_fields = ('body', 'handlers', 'orelse',)
-    _multi_line_block_fields = ('body', 'handlers', 'orelse')
+    _multi_line_block_fields = ('body', 'orelse')
     body = None
     """The contents of the block to catch exceptions from.
 
-    :type: list(NodeNG) or None
+    :type: Block or None
     """
     handlers = None
     """The exception handlers.
@@ -3948,20 +3990,20 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     orelse = None
     """The contents of the ``else`` block.
 
-    :type: list(NodeNG) or None
+    :type: Block or None
     """
 
     def postinit(self, body=None, handlers=None, orelse=None):
         """Do some setup after initialisation.
 
         :param body: The contents of the block to catch exceptions from.
-        :type body: list(NodeNG) or None
+        :type body: Block or None
 
         :param handlers: The exception handlers.
         :type handlers: list(ExceptHandler) or None
 
         :param orelse: The contents of the ``else`` block.
-        :type orelse: list(NodeNG) or None
+        :type orelse: Block or None
         """
         self.body = body
         self.handlers = handlers
@@ -3991,10 +4033,10 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         return self._elsed_block_range(lineno, self.orelse, last)
 
     def get_children(self):
-        yield from self.body
+        yield self.body
 
-        yield from self.handlers or ()
-        yield from self.orelse or ()
+        yield from self.handlers
+        yield self.orelse
 
 
 class TryFinally(mixins.MultiLineBlockMixin,
@@ -4022,7 +4064,7 @@ class TryFinally(mixins.MultiLineBlockMixin,
     finalbody = None
     """The contents of the ``finally`` block.
 
-    :type: list(NodeNG) or None
+    :type: Block or None
     """
 
     def postinit(self, body=None, finalbody=None):
@@ -4032,7 +4074,7 @@ class TryFinally(mixins.MultiLineBlockMixin,
         :type body: list(TryExcept) or None
 
         :param finalbody: The contents of the ``finally`` block.
-        :type finalbody: list(NodeNG) or None
+        :type finalbody: Block or None
         """
         self.body = body
         self.finalbody = finalbody
@@ -4055,8 +4097,8 @@ class TryFinally(mixins.MultiLineBlockMixin,
         return self._elsed_block_range(lineno, self.finalbody)
 
     def get_children(self):
-        yield from self.body
-        yield from self.finalbody
+        yield self.body
+        yield self.finalbody
 
 
 class Tuple(_BaseContainer):
@@ -4206,12 +4248,12 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     body = None
     """The contents of the loop.
 
-    :type: list(NodeNG) or None
+    :type: Block or None
     """
     orelse = None
     """The contents of the ``else`` block.
 
-    :type: list(NodeNG) or None
+    :type: Block or None
     """
 
     def postinit(self, test=None, body=None, orelse=None):
@@ -4221,10 +4263,10 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         :type test: NodeNG or None
 
         :param body: The contents of the loop.
-        :type body: list(NodeNG) or None
+        :type body: Block or None
 
         :param orelse: The contents of the ``else`` block.
-        :type orelse: list(NodeNG) or None
+        :type orelse: Block or None
         """
         self.test = test
         self.body = body
@@ -4253,8 +4295,8 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     def get_children(self):
         yield self.test
 
-        yield from self.body
-        yield from self.orelse
+        yield self.body
+        yield self.orelse
 
 
 class With(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn,
@@ -4279,7 +4321,7 @@ class With(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn,
     body = None
     """The contents of the ``with`` block.
 
-    :type: list(NodeNG) or None
+    :type: Block or None
     """
     type_annotation = None
     """If present, this will contain the type annotation passed by a type comment
@@ -4295,7 +4337,7 @@ class With(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn,
         :type items: list(tuple(NodeNG, AssignName or None)) or None
 
         :param body: The contents of the ``with`` block.
-        :type body: list(NodeNG) or None
+        :type body: Block or None
         """
         self.items = items
         self.body = body
@@ -4319,7 +4361,7 @@ class With(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn,
             yield expr
             if var:
                 yield var
-        yield from self.body
+        yield self.body
 
 
 class AsyncWith(With):

@@ -594,7 +594,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             pass
             return
         ''')
-        last_child = func.last_child()
+        last_child = func.body.last_child()
         self.assertIsInstance(last_child, nodes.Return)
         self.assertEqual(func.tolineno, 5)
 
@@ -773,12 +773,12 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         dclass = module['D']
         init = dclass.local_attr('__init__')[0]
         self.assertIsInstance(init, nodes.FunctionDef)
-        self.assertEqual(init.parent.name, 'B')
+        self.assertEqual(init.parent.parent.name, 'B')
 
         cclass = module['C']
         init = cclass.local_attr('__init__')[0]
         self.assertIsInstance(init, nodes.FunctionDef)
-        self.assertEqual(init.parent.name, 'A')
+        self.assertEqual(init.parent.parent.name, 'A')
 
         ancestors = list(dclass.local_attr_ancestors('__init__'))
         self.assertEqual([node.name for node in ancestors], ['B', 'A', 'object'])

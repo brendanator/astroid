@@ -139,8 +139,8 @@ def register_module_extender(manager, module_name, get_extension_mod):
         for name, objs in extension_module.locals.items():
             node.locals[name] = objs
             for obj in objs:
-                if obj.parent is extension_module:
-                    obj.parent = node
+                if obj.parent is extension_module.body:
+                    obj.parent = node.body
 
     manager.register_transform(Module, transform, lambda n: n.name == module_name)
 

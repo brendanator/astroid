@@ -337,12 +337,12 @@ class SuperTests(unittest.TestCase):
         first_unbound = next(ast_nodes[4].infer())
         self.assertIsInstance(first_unbound, nodes.FunctionDef)
         self.assertEqual(first_unbound.name, 'test2')
-        self.assertEqual(first_unbound.parent.name, 'Second')
+        self.assertEqual(first_unbound.parent.parent.name, 'Second')
 
         second_unbound = next(ast_nodes[5].infer())
         self.assertIsInstance(second_unbound, nodes.FunctionDef)
         self.assertEqual(second_unbound.name, 'test')
-        self.assertEqual(second_unbound.parent.name, 'First')
+        self.assertEqual(second_unbound.parent.parent.name, 'First')
 
     def test_super_invalid_mro(self):
         node = builder.extract_node('''

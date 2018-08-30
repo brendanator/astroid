@@ -89,7 +89,7 @@ class TestTransforms(unittest.TestCase):
             name.name = 'value'
             assign.targets = [name]
             assign.value = nodes.const_factory(42)
-            node.body.append(assign)
+            node.body.statements.append(assign)
 
         self.transformer.register_transform(nodes.FunctionDef,
                                             transform_function)

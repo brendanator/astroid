@@ -24,6 +24,7 @@ import sys
 
 from astroid import context as contextmod
 from astroid import exceptions
+from astroid import nodes
 from astroid import util
 
 objectmodel = util.lazy_import('interpreter.objectmodel')
@@ -435,9 +436,14 @@ class BoundMethod(UnboundMethod):
         cls = mcs.__class__(name=name.value, lineno=caller.lineno,
                             col_offset=caller.col_offset,
                             parent=caller)
-        empty = node_classes.Pass()
-        cls.postinit(bases=bases.elts, body=[empty], decorators=[],
-                     newstyle=True, metaclass=mcs, keywords=[])
+        
+        cls.postinit(
+            bases=bases.elts, 
+            body=nodes.Block('body', [node_classes.Pass()], cls), 
+            decorators=[],
+            newstyle=True, 
+            metaclass=mcs, 
+            keywords=[])
         cls.locals = cls_locals
         return cls
 
