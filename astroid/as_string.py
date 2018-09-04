@@ -316,6 +316,10 @@ class AsStringVisitor:
         """return an astroid.Global node as string"""
         return 'global %s' % ', '.join(node.names)
 
+    def visit_block(self, node):
+      """return an astroid.Block node as string"""
+      return self._stmt_list(node, indent=False)
+
     def visit_if(self, node):
         """return an astroid.If node as string"""
         ifs = ['if %s:\n%s' % (node.test.accept(self), self._stmt_list(node.body))]
