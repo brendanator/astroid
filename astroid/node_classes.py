@@ -1386,23 +1386,11 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
     #    for each normal argument. If an argument doesn't have an
     #    annotation, its value will be None.
 
-    _astroid_fields = ('args', 'defaults', 'kwonlyargs',
+    _astroid_fields = ('args', 'defaults', 'vararg', 'kwonlyargs', 'kwarg',
                        'kw_defaults', 'annotations', 'varargannotation',
                        'kwargannotation', 'kwonlyargs_annotations')
-    varargannotation = None
-    """The type annotation for the variable length arguments.
 
-    :type: NodeNG
-    """
-    kwargannotation = None
-    """The type annotation for the variable length keyword arguments.
-
-    :type: NodeNG
-    """
-
-    _other_fields = ('vararg', 'kwarg')
-
-    def __init__(self, vararg=None, kwarg=None, parent=None):
+    def __init__(self, parent=None):
         """
         :param vararg: The name of the variable length arguments.
         :type vararg: str or None
@@ -1414,17 +1402,6 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :type parent: NodeNG or None
         """
         super(Arguments, self).__init__(parent=parent)
-        self.vararg = vararg
-        """The name of the variable length arguments.
-
-        :type: str or None
-        """
-
-        self.kwarg = kwarg
-        """The name of the variable length keyword arguments.
-
-        :type: str or None
-        """
 
         self.args = []
         """The names of the required arguments.
@@ -1438,22 +1415,28 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :type: list(NodeNG)
         """
 
-        self.kwonlyargs = []
-        """The keyword arguments that cannot be passed positionally.
-
-        :type: list(AssignName)
-        """
-
-        self.kw_defaults = []
-        """The default values for keyword arguments that cannot be passed positionally.
-
-        :type: list(NodeNG)
-        """
-
         self.annotations = []
         """The type annotations of arguments that can be passed positionally.
 
         :type: list(NodeNG)
+        """
+
+        self.vararg = None
+        """The name of the variable length arguments.
+
+        :type: str or None
+        """
+
+        self.varargannotation = None
+        """The type annotation for the variable length arguments.
+
+        :type: NodeNG
+        """
+
+        self.kwonlyargs = []
+        """The keyword arguments that cannot be passed positionally.
+
+        :type: list(AssignName)
         """
 
         self.kwonlyargs_annotations = []
@@ -1462,7 +1445,25 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :type: list(NodeNG)
         """
 
-    def postinit(self, args, defaults, kwonlyargs, kw_defaults,
+        self.kw_defaults = []
+        """The default values for keyword arguments that cannot be passed positionally.
+
+        :type: list(NodeNG)
+        """
+
+        self.kwarg = None
+        """The name of the variable length keyword arguments.
+
+        :type: str or None
+        """
+
+        self.kwargannotation = None
+        """The type annotation for the variable length keyword arguments.
+
+        :type: NodeNG
+        """
+
+    def postinit(self, args, defaults, vararg, kwonlyargs, kw_defaults, kwarg,
                  annotations,
                  kwonlyargs_annotations=None,
                  varargannotation=None,
@@ -1503,8 +1504,10 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         """
         self.args = args
         self.defaults = defaults
+        self.vararg = vararg
         self.kwonlyargs = kwonlyargs
         self.kw_defaults = kw_defaults
+        self.kwarg = kwarg
         self.annotations = annotations
         self.kwonlyargs_annotations = kwonlyargs_annotations
         self.varargannotation = varargannotation
@@ -1537,7 +1540,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
                              getattr(self, 'annotations', None))
             )
         if self.vararg:
-            result.append('*%s' % self.vararg)
+            result.append('*%s' % self.vararg.name)
         if self.kwonlyargs:
             if not self.vararg:
                 result.append('*')
@@ -1547,7 +1550,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
                 self.kwonlyargs_annotations
             ))
         if self.kwarg:
-            result.append('**%s' % self.kwarg)
+            result.append('**%s' % self.kwarg.name)
         return ', '.join(result)
 
     def default_value(self, argname):
@@ -1579,9 +1582,9 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
             False otherwise.
         :rtype: bool
         """
-        if name == self.vararg:
+        if self.vararg and self.vararg.name == name:
             return True
-        if name == self.kwarg:
+        if self.kwarg and self.kwarg.name == name:
             return True
         return (self.find_argname(name, True)[1] is not None or
                 self.kwonlyargs and _find_arg(name, self.kwonlyargs, True)[1] is not None)
@@ -1608,12 +1611,16 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
 
         if self.varargannotation is not None:
             yield self.varargannotation
+        if self.vararg:
+            yield self.vararg
 
         yield from _yield_args(
             self.kwonlyargs, self.kw_defaults, self.kwonlyargs_annotations)
 
         if self.kwargannotation is not None:
             yield self.kwargannotation
+        if self.kwarg:
+            yield self.kwarg
 
 
 def _find_arg(argname, args, rec=False):

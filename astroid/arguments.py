@@ -217,7 +217,7 @@ class CallSite:
             except IndexError:
                 pass
 
-        if funcnode.args.kwarg == name:
+        if funcnode.args.kwarg and funcnode.args.kwarg.name == name:
             # It wants all the keywords that were passed into
             # the call site.
             if self.has_invalid_keywords():
@@ -234,7 +234,7 @@ class CallSite:
             kwarg.postinit([(nodes.const_factory(key), value)
                             for key, value in kwargs.items()])
             return iter((kwarg, ))
-        if funcnode.args.vararg == name:
+        if funcnode.args.vararg and funcnode.args.vararg.name == name:
             # It wants all the args that were passed into
             # the call site.
             if self.has_invalid_arguments():

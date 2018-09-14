@@ -1160,9 +1160,9 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         else:
             names = []
         if self.args.vararg:
-            names.append(self.args.vararg)
+            names.append(self.args.vararg.name)
         if self.args.kwarg:
-            names.append(self.args.kwarg)
+            names.append(self.args.kwarg.name)
         return names
 
     def infer_call_result(self, caller, context=None):

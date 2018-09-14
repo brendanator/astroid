@@ -186,13 +186,19 @@ class TreeRebuilder:
 
     def visit_arguments(self, node, parent):
         """visit a Arguments node by returning a fresh instance of it"""
+        newnode = nodes.Arguments(parent)
         vararg, kwarg = node.vararg, node.kwarg
         if PY34:
-            newnode = nodes.Arguments(vararg.arg if vararg else None,
-                                      kwarg.arg if kwarg else None,
-                                      parent)
+            if vararg:
+                vararg = self.visit_assignname(node, newnode, vararg.arg)
+            if kwarg:
+                kwarg = self.visit_assignname(node, newnode, kwarg.arg)
         else:
-            newnode = nodes.Arguments(vararg, kwarg, parent)
+            if vararg:
+                vararg = self.visit_assignname(node, newnode, vararg)
+            if kwarg:
+                kwarg = self.visit_assignname(node, newnode, kwarg)
+            newnode = nodes.Arguments(parent)
         args = [self.visit(child, newnode) for child in node.args]
         defaults = [self.visit(child, newnode)
                     for child in node.defaults]
@@ -205,13 +211,11 @@ class TreeRebuilder:
                 if node.vararg.annotation:
                     varargannotation = self.visit(node.vararg.annotation,
                                                   newnode)
-                vararg = vararg.arg
         if kwarg:
             if PY34:
                 if node.kwarg.annotation:
                     kwargannotation = self.visit(node.kwarg.annotation,
                                                  newnode)
-                kwarg = kwarg.arg
         if PY3:
             kwonlyargs = [self.visit(child, newnode) for child
                           in node.kwonlyargs]
@@ -232,8 +236,10 @@ class TreeRebuilder:
         newnode.postinit(
             args=args,
             defaults=defaults,
+            vararg=vararg,
             kwonlyargs=kwonlyargs,
             kw_defaults=kw_defaults,
+            kwarg=kwarg,
             annotations=annotations,
             kwonlyargs_annotations=kwonlyargs_annotations,
             varargannotation=varargannotation,
@@ -241,9 +247,9 @@ class TreeRebuilder:
         )
         # save argument names in locals:
         if vararg:
-            newnode.parent.set_local(vararg, newnode)
+            newnode.parent.set_local(vararg.name, newnode)
         if kwarg:
-            newnode.parent.set_local(kwarg, newnode)
+            newnode.parent.set_local(kwarg.name, newnode)
         return newnode
 
     def visit_assert(self, node, parent):

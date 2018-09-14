@@ -148,9 +148,9 @@ def register_arguments(func, args=None):
     if args is None:
         args = func.args.args
         if func.args.vararg:
-            func.set_local(func.args.vararg, func.args)
+            func.set_local(func.args.vararg.name, func.args)
         if func.args.kwarg:
-            func.set_local(func.args.kwarg, func.args)
+            func.set_local(func.args.kwarg.name, func.args)
     for arg in args:
         if isinstance(arg, nodes.Name):
             func.set_local(arg.name, arg)

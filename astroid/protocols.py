@@ -322,12 +322,12 @@ def _arguments_infer_argname(self, name, context):
             yield value
         return
 
-    if name == self.vararg:
+    if self.vararg and self.vararg.name == name:
         vararg = nodes.const_factory(())
         vararg.parent = self
         yield vararg
         return
-    if name == self.kwarg:
+    if self.kwarg and self.kwarg.name == name:
         kwarg = nodes.const_factory({})
         kwarg.parent = self
         yield kwarg

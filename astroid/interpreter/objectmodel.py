@@ -243,9 +243,9 @@ class FunctionModel(ObjectModel):
             if annotation
         }
         if args.varargannotation:
-            annotations[args.vararg] = args.varargannotation
+            annotations[args.vararg.name] = args.varargannotation
         if args.kwargannotation:
-            annotations[args.kwarg] = args.kwargannotation
+            annotations[args.kwarg.name] = args.kwargannotation
         if returns:
             annotations['return'] = returns
 
@@ -351,8 +351,10 @@ class FunctionModel(ObjectModel):
                 arguments.postinit(
                     args=params,
                     defaults=[],
+                    vararg=None,
                     kwonlyargs=[],
                     kw_defaults=[],
+                    kwarg=None,
                     annotations=[],
                 )
                 return arguments
