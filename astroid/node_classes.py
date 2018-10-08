@@ -3269,6 +3269,7 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     """
     _astroid_fields = ('test', 'body', 'orelse')
     _multi_line_block_fields = ('body', 'orelse')
+    _other_fields = ('has_elif_block',)
     test = None
     """The condition that the statement tests.
 
@@ -3285,7 +3286,7 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     :type: Block or None
     """
 
-    def postinit(self, test=None, body=None, orelse=None):
+    def postinit(self, test=None, body=None, orelse=None, has_elif_block=False):
         """Do some setup after initialisation.
 
         :param test: The condition that the statement tests.
@@ -3300,6 +3301,7 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         self.test = test
         self.body = body
         self.orelse = orelse
+        self.has_elif_block = has_elif_block
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -3331,9 +3333,6 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
 
         yield self.body
         yield self.orelse
-
-    def has_elif_block(self):
-        return len(self.orelse) == 1 and isinstance(self.orelse[0], If)
 
 class IfExp(NodeNG):
     """Class representing an :class:`ast.IfExp` node.

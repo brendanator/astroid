@@ -323,7 +323,8 @@ class AsStringVisitor:
     def visit_if(self, node):
         """return an astroid.If node as string"""
         ifs = ['if %s:\n%s' % (node.test.accept(self), self._stmt_list(node.body))]
-        if node.has_elif_block():
+        if node.has_elif_block:
+            assert len(node.orelse) == 1, node.orelse
             ifs.append('el%s' % self._stmt_list(node.orelse, indent=False))
         elif node.orelse:
             ifs.append('else:\n%s' % self._stmt_list(node.orelse))

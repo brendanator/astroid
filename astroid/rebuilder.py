@@ -650,10 +650,14 @@ class TreeRebuilder:
             'orelse',
             [self.visit(child, newnode) for child in node.orelse],
             newnode)
+        has_elif_block = (
+            len(node.orelse) == 1 and type(node.orelse[0]).__name__ == 'If'
+            and node.orelse[0].col_offset == node.orelse[0].test.col_offset)
         newnode.postinit(
             self.visit(node.test, newnode),
             body,
-            orelse)
+            orelse,
+            has_elif_block)
         return newnode
 
     def visit_ifexp(self, node, parent):
