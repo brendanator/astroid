@@ -800,9 +800,9 @@ class GeneratorExp(ComprehensionScope):
         return True
 
     def get_children(self):
-        yield self.elt
-
         yield from self.generators
+
+        yield self.elt
 
 
 class DictComp(ComprehensionScope):
@@ -879,10 +879,10 @@ class DictComp(ComprehensionScope):
         return util.Uninferable
 
     def get_children(self):
+        yield from self.generators
+
         yield self.key
         yield self.value
-
-        yield from self.generators
 
 
 class SetComp(ComprehensionScope):
@@ -950,9 +950,9 @@ class SetComp(ComprehensionScope):
         return util.Uninferable
 
     def get_children(self):
-        yield self.elt
-
         yield from self.generators
+
+        yield self.elt
 
 
 class _ListComp(node_classes.NodeNG):
@@ -996,9 +996,9 @@ class _ListComp(node_classes.NodeNG):
         return util.Uninferable
 
     def get_children(self):
-        yield self.elt
-
         yield from self.generators
+
+        yield self.elt
 
 
 class ListComp(_ListComp, ComprehensionScope):
