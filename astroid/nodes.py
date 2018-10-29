@@ -36,7 +36,7 @@ from astroid.node_classes import (
     Unknown,
 )
 from astroid.scoped_nodes import (
-    Module, GeneratorExp, Lambda, DictComp,
+    LocalsDictNodeNG, Module, GeneratorExp, Lambda, DictComp,
     ListComp, SetComp, FunctionDef, ClassDef,
     AsyncFunctionDef,
 )
@@ -56,7 +56,7 @@ ALL_NODE_CLASSES = (
     Attribute, GeneratorExp, Global,
     If, IfExp, Import, Index,
     Keyword,
-    Lambda, List, ListComp,
+    Lambda, List, ListComp, LocalsDictNodeNG,
     Name, Nonlocal,
     Module,
     Pass, Print,
