@@ -1650,7 +1650,7 @@ def _format_args(args, defaults=None, annotations=None):
         else:
             argname = arg.name
             if annotation is not None:
-                argname += ':' + annotation.as_string()
+                argname += ': ' + annotation.as_string()
             values.append(argname)
 
             if defaults is not None and i >= default_offset:
